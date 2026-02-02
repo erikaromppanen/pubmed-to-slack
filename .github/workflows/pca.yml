@@ -27,7 +27,6 @@ jobs:
           RSS_URL: ${{ secrets.PUBMED_RSS_PCA }}
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_PCA }}
           STATE_FILE: state/posted_pca.json
-          CHANNEL_LABEL: "PCa"
         run: python post_pubmed_rss.py
 
       - name: Commit state updates

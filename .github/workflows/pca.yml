@@ -24,9 +24,9 @@ jobs:
 
       - name: Run poster
         env:
-          RSS_URL: ${{ secrets.PUBMED_RSS_PCA }}
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_PCA }}
-          STATE_FILE: state/posted_pca.json
+          RSS_URL: ${{ secrets.PUBMED_RSS_CCRCC }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_CCRCC }}
+          STATE_FILE: state/posted_ccrcc.json
         run: python post_pubmed_rss.py
 
       - name: Commit state updates
@@ -37,6 +37,6 @@ jobs:
           fi
           git config user.name "pubmed-bot"
           git config user.email "pubmed-bot@users.noreply.github.com"
-          git add state/posted_pca.json
-          git commit -m "Update posted state (PCA)"
+          git add state/posted_ccrcc.json
+          git commit -m "Update posted state (ccRCC)"
           git push

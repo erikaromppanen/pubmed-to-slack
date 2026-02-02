@@ -1,4 +1,4 @@
-name: PubMed RSS -> Slack (PCA)
+name: PubMed RSS -> Slack (ccRCC)
 
 on:
   schedule:

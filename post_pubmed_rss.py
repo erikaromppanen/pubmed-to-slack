@@ -73,6 +73,8 @@ def main() -> None:
     for eid, title, link, abstract in new_items:
         prefix = f"{label}\n" if label else ""
         title_line = f"<{link}|{title}>" if link and title else title or link
+        if title_line:
+            title_line = f"*{title_line}*"
         abstract_text = (abstract or "").strip()
         if abstract_chars > 0 and len(abstract_text) > abstract_chars:
             abstract_text = abstract_text[:abstract_chars].rstrip() + "…"

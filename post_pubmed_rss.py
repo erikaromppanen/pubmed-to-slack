@@ -1,6 +1,9 @@
-import os, json, time
-import requests
+import json
+import os
+import time
+
 import feedparser
+import requests
 
 def load_state(path: str) -> set[str]:
     if not os.path.exists(path):
@@ -18,11 +21,18 @@ def slack_post(webhook: str, text: str) -> None:
     resp = requests.post(webhook, json={"text": text}, timeout=30)
     resp.raise_for_status()
 
+def extract_abstract(entry) -> str:
+    summary = (getattr(entry, "summary", "") or "").strip()
+    if summary:
+        return summary
+    return (getattr(entry, "description", "") or "").strip()
+
 def main() -> None:
     rss_url = os.environ["RSS_URL"]
     webhook = os.environ["SLACK_WEBHOOK"]
     state_file = os.environ["STATE_FILE"]
     label = os.environ.get("CHANNEL_LABEL", "").strip()
+    abstract_chars = int(os.environ.get("ABSTRACT_CHARS", "400"))
 
     # If state is empty, treat this as "first run" initialization:
     posted = load_state(state_file)
@@ -40,24 +50,36 @@ def main() -> None:
             continue
         title = (getattr(e, "title", "") or "").strip()
         link = (getattr(e, "link", "") or "").strip()
-        items.append((eid, title, link))
+        abstract = extract_abstract(e)
+        items.append((eid, title, link, abstract))
 
     # FIRST RUN BEHAVIOR:
     # If nothing has been posted yet, we "prime" the state with whatever is already in the feed,
     # and we do NOT post anything. This ensures only future papers get posted.
     if len(posted) == 0:
-        for eid, _, _ in items:
+        for eid, _, _, _ in items:
             posted.add(eid)
         save_state(state_file, posted)
         print(f"Initialized state with {len(items)} existing RSS items. No Slack posts sent.")
         return
 
     # Normal behavior: post only items not seen before (oldest -> newest)
-    new_items = [(eid, title, link) for (eid, title, link) in reversed(items) if eid not in posted]
+    new_items = [
+        (eid, title, link, abstract)
+        for (eid, title, link, abstract) in reversed(items)
+        if eid not in posted
+    ]
 
-    for eid, title, link in new_items:
+    for eid, title, link, abstract in new_items:
         prefix = f"{label}\n" if label else ""
-        text = f"{prefix}*{title}*\n{link}".strip()
+        title_line = f"<{link}|{title}>" if link and title else title or link
+        abstract_text = (abstract or "").strip()
+        if abstract_chars > 0 and len(abstract_text) > abstract_chars:
+            abstract_text = abstract_text[:abstract_chars].rstrip() + "…"
+        if abstract_text:
+            text = f"{prefix}{title_line}\n{abstract_text}".strip()
+        else:
+            text = f"{prefix}{title_line}".strip()
         slack_post(webhook, text)
         posted.add(eid)
         time.sleep(0.5)

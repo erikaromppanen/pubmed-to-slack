@@ -1,0 +1,42 @@
+name: PubMed RSS -> Slack (PCA)
+
+on:
+  schedule:
+    - cron: "0 */3 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run poster
+        env:
+          RSS_URL: ${{ secrets.PUBMED_RSS_PCA }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_PCA }}
+          STATE_FILE: state/posted_pca.json
+        run: python post_pubmed_rss.py
+
+      - name: Commit state updates
+        run: |
+          if git diff --quiet; then
+            echo "No state changes."
+            exit 0
+          fi
+          git config user.name "pubmed-bot"
+          git config user.email "pubmed-bot@users.noreply.github.com"
+          git add state/posted_pca.json
+          git commit -m "Update posted state (PCA)"
+          git push

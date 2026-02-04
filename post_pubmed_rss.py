@@ -84,6 +84,7 @@ def main() -> None:
             text = f"{prefix}{title_line}".strip()
         slack_post(webhook, text)
         posted.add(eid)
+        save_state(state_file, posted)
         time.sleep(0.5)
 
     save_state(state_file, posted)

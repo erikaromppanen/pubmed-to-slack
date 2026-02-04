@@ -30,6 +30,7 @@ jobs:
           RSS_URL: ${{ secrets.PUBMED_RSS_CCRCC }}
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_CCRCC }}
           STATE_FILE: state/posted_ccrcc.json
+          DEBUG_RSS: "1"
         run: python post_pubmed_rss.py
 
       - name: Commit state updates

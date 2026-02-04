@@ -72,6 +72,7 @@ def main() -> None:
     label = os.environ.get("CHANNEL_LABEL", "").strip()
     abstract_chars = int(os.environ.get("ABSTRACT_CHARS", "400"))
     rss_timeout = int(os.environ.get("RSS_TIMEOUT", "30"))
+    debug_rss = os.environ.get("DEBUG_RSS", "").strip().lower() in {"1", "true", "yes", "y"}
 
     # If state is empty, treat this as "first run" initialization:
     posted = load_state(state_file)
@@ -91,6 +92,14 @@ def main() -> None:
             continue
         raw_title = (getattr(e, "title", "") or "").strip()
         raw_link = (getattr(e, "link", "") or "").strip()
+        if debug_rss:
+            raw_summary = (getattr(e, "summary", "") or getattr(e, "description", "") or "").strip()
+            print("RSS RAW")
+            print(f"id={eid}")
+            print(f"title={raw_title}")
+            print(f"link={raw_link}")
+            print(f"summary={raw_summary}")
+            print("---")
         link, title = extract_link_from_title(raw_title, raw_link)
         title = slack_escape_label(sanitize_text(title))
         abstract = sanitize_text(extract_abstract(e))

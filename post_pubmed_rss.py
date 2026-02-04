@@ -33,11 +33,14 @@ def main() -> None:
     state_file = os.environ["STATE_FILE"]
     label = os.environ.get("CHANNEL_LABEL", "").strip()
     abstract_chars = int(os.environ.get("ABSTRACT_CHARS", "400"))
+    rss_timeout = int(os.environ.get("RSS_TIMEOUT", "30"))
 
     # If state is empty, treat this as "first run" initialization:
     posted = load_state(state_file)
 
-    feed = feedparser.parse(rss_url)
+    response = requests.get(rss_url, timeout=rss_timeout)
+    response.raise_for_status()
+    feed = feedparser.parse(response.content)
     entries = feed.entries or []
 
     def entry_id(e) -> str:

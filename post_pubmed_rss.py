@@ -65,6 +65,14 @@ def extract_link_from_title(title: str, fallback_link: str) -> tuple[str, str]:
         return link, remainder
     return "", title
 
+def sanitize_link(link: str) -> str:
+    if not link:
+        return ""
+    cleaned = html.unescape(link).strip()
+    # Slack requires valid URLs without spaces.
+    cleaned = cleaned.replace(" ", "%20")
+    return cleaned
+
 def main() -> None:
     rss_url = os.environ["RSS_URL"]
     webhook = os.environ["SLACK_WEBHOOK"]
@@ -101,6 +109,7 @@ def main() -> None:
             print(f"summary={raw_summary}")
             print("---")
         link, title = extract_link_from_title(raw_title, raw_link)
+        link = sanitize_link(link)
         title = slack_escape_label(sanitize_text(title))
         abstract = sanitize_text(extract_abstract(e))
         items.append((eid, title, link, abstract))

@@ -11,6 +11,7 @@ Free PubMed RSS → Slack pipeline using GitHub Actions. Posts one paper per mes
 ## Slack message format
 
 - Title is a clickable link and **bolded**.
+- Title and abstract text are HTML-stripped before posting.
 - Abstract preview included when available.
 - Configure abstract preview length with `ABSTRACT_CHARS` (default `400`, set to `0` to disable).
 

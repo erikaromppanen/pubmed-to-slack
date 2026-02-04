@@ -1,5 +1,7 @@
+import html
 import json
 import os
+import re
 import time
 
 import feedparser
@@ -27,6 +29,18 @@ def extract_abstract(entry) -> str:
         return summary
     return (getattr(entry, "description", "") or "").strip()
 
+def sanitize_text(text: str) -> str:
+    if not text:
+        return ""
+    cleaned = html.unescape(text)
+    cleaned = re.sub(r"(?i)<\s*br\s*/?\s*>", "\n", cleaned)
+    cleaned = re.sub(r"(?i)</\s*p\s*>", "\n", cleaned)
+    cleaned = re.sub(r"<[^>]+>", "", cleaned)
+    cleaned = cleaned.replace("\r\n", "\n").replace("\r", "\n")
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    cleaned = re.sub(r"[ \t]+", " ", cleaned)
+    return cleaned.strip()
+
 def main() -> None:
     rss_url = os.environ["RSS_URL"]
     webhook = os.environ["SLACK_WEBHOOK"]
@@ -51,9 +65,9 @@ def main() -> None:
         eid = entry_id(e)
         if not eid:
             continue
-        title = (getattr(e, "title", "") or "").strip()
+        title = sanitize_text((getattr(e, "title", "") or "").strip())
         link = (getattr(e, "link", "") or "").strip()
-        abstract = extract_abstract(e)
+        abstract = sanitize_text(extract_abstract(e))
         items.append((eid, title, link, abstract))
 
     # FIRST RUN BEHAVIOR:

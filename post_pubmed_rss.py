@@ -49,17 +49,21 @@ def slack_escape_label(text: str) -> str:
 
 def extract_link_from_title(title: str, fallback_link: str) -> tuple[str, str]:
     if fallback_link:
-        return fallback_link, title
+        return html.unescape(fallback_link), title
     if not title:
         return "", title
-    match = re.match(r"\s*(https?://\S+)", title)
-    if not match:
-        return "", title
-    link = match.group(1).rstrip()
-    remainder = title[match.end():].lstrip()
-    if remainder.startswith("|"):
-        remainder = remainder[1:].lstrip()
-    return link, remainder
+    left, sep, right = title.partition("|")
+    candidate = left.strip()
+    if candidate and re.match(r"^https?://\S+$", candidate):
+        return html.unescape(candidate), right.strip()
+    match = re.match(r"\s*(https?://[^\s|]+)", title)
+    if match:
+        link = html.unescape(match.group(1).rstrip())
+        remainder = title[match.end():].lstrip()
+        if remainder.startswith("|"):
+            remainder = remainder[1:].lstrip()
+        return link, remainder
+    return "", title
 
 def main() -> None:
     rss_url = os.environ["RSS_URL"]

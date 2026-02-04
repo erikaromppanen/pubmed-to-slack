@@ -47,6 +47,20 @@ def slack_escape_label(text: str) -> str:
     # Slack link labels cannot contain these characters unescaped.
     return text.replace("|", "¦").replace(">", "›").replace("<", "‹")
 
+def extract_link_from_title(title: str, fallback_link: str) -> tuple[str, str]:
+    if fallback_link:
+        return fallback_link, title
+    if not title:
+        return "", title
+    match = re.match(r"\s*(https?://\S+)", title)
+    if not match:
+        return "", title
+    link = match.group(1).rstrip()
+    remainder = title[match.end():].lstrip()
+    if remainder.startswith("|"):
+        remainder = remainder[1:].lstrip()
+    return link, remainder
+
 def main() -> None:
     rss_url = os.environ["RSS_URL"]
     webhook = os.environ["SLACK_WEBHOOK"]
@@ -71,8 +85,10 @@ def main() -> None:
         eid = entry_id(e)
         if not eid:
             continue
-        title = slack_escape_label(sanitize_text((getattr(e, "title", "") or "").strip()))
-        link = (getattr(e, "link", "") or "").strip()
+        raw_title = (getattr(e, "title", "") or "").strip()
+        raw_link = (getattr(e, "link", "") or "").strip()
+        link, title = extract_link_from_title(raw_title, raw_link)
+        title = slack_escape_label(sanitize_text(title))
         abstract = sanitize_text(extract_abstract(e))
         items.append((eid, title, link, abstract))
 
